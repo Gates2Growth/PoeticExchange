@@ -88,6 +88,15 @@ export function MainLayout({ children }: MainLayoutProps) {
                       <Search className="h-5 w-5 text-gray-500" />
                     </Button>
                   )}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="ml-2"
+                    onClick={() => logoutMutation.mutate()}
+                  >
+                    Log Out
+                  </Button>
 
                   <UserDropdown />
                 </div>
