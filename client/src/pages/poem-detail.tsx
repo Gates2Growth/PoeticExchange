@@ -7,6 +7,17 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getUserInitial } from "@/lib/utils";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
 
 import {
   Form,
@@ -28,7 +39,6 @@ import {
   ChevronLeft, 
   ChevronRight 
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
 type FormData = {
   content: string;
@@ -223,12 +233,34 @@ export default function PoemDetail() {
                     
                     if (data.pdfData) {
                       // Create a download link for the PDF
+                      const pdfData = data.pdfData.replace(/^data:application\/pdf;base64,/, '');
+                      const byteCharacters = atob(pdfData);
+                      const byteArrays = [];
+                      
+                      for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+                        const slice = byteCharacters.slice(offset, offset + 512);
+                        const byteNumbers = new Array(slice.length);
+                        for (let i = 0; i < slice.length; i++) {
+                          byteNumbers[i] = slice.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        byteArrays.push(byteArray);
+                      }
+                      
+                      const blob = new Blob(byteArrays, {type: 'application/pdf'});
+                      const url = URL.createObjectURL(blob);
                       const link = document.createElement('a');
-                      link.href = `data:application/pdf;base64,${data.pdfData}`;
-                      link.download = `poem-${poem.id}.pdf`;
+                      link.href = url;
+                      link.download = `poem-${poem.title.replace(/\s+/g, '-').toLowerCase()}.pdf`;
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+                      
+                      toast({
+                        title: "Success",
+                        description: "Poem downloaded as PDF successfully!",
+                      });
                     } else {
                       throw new Error("Failed to generate PDF");
                     }
@@ -245,9 +277,41 @@ export default function PoemDetail() {
               >
                 <i className="fas fa-download h-4 w-4"></i>
               </Button>
-              <Button variant="ghost" size="sm" title="Share poem">
-                <Share className="h-4 w-4" />
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" title="Share poem">
+                    <Share className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Share This Poem</DialogTitle>
+                    <DialogDescription>
+                      Copy the link below to share this poem with others.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex items-center space-x-2 mt-4">
+                    <Input 
+                      readOnly 
+                      value={window.location.href} 
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href);
+                        toast({
+                          title: "Link Copied",
+                          description: "Poem link copied to clipboard!",
+                        });
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
           <div className="flex items-center mt-2 text-sm text-gray-500">

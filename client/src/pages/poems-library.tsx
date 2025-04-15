@@ -231,9 +231,11 @@ export default function PoemsLibrary() {
             : "space-y-4"
           }>
             {currentPoems.map((poem) => {
-              const hasImages = poem.id % 2 === 0; // Mock for display purposes
-              const imageCount = hasImages ? poem.id % 4 : 0; // Mock for display
-              const commentCount = poem.id % 6; // Mock for display
+              // These will be replaced by actual data when we hook up the API
+              const hasImages = false; // Will check actual images when we connect to API
+              const imageCount = 0; // Will use actual image count from API
+              const commentCount = 0; // Will use actual comment count from API
+              const isNew = Math.random() > 0.7; // Random for demo, will use actual data
               
               // For grid view
               if (view === "grid") {
