@@ -115,6 +115,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to fetch poems' });
     }
   });
+  
+  app.get('/api/poems/accessible', ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const poems = await storage.getAccessiblePoems(userId);
+      res.json(poems);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch accessible poems' });
+    }
+  });
 
   app.get('/api/poems/user/:userId', async (req, res) => {
     try {
@@ -314,6 +324,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(messages);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch messages' });
+    }
+  });
+
+  // Poem Read Status
+  app.get('/api/poems/:poemId/read-status', ensureAuthenticated, async (req, res) => {
+    try {
+      const poemId = parseInt(req.params.poemId);
+      const userId = req.user.id;
+      
+      const isRead = await storage.getPoemReadStatus(poemId, userId);
+      res.json({ isRead });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get read status' });
+    }
+  });
+
+  app.post('/api/poems/:poemId/mark-read', ensureAuthenticated, async (req, res) => {
+    try {
+      const poemId = parseInt(req.params.poemId);
+      const userId = req.user.id;
+      
+      const poemRead = await storage.markPoemAsRead(poemId, userId);
+      res.status(201).json(poemRead);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to mark poem as read' });
+    }
+  });
+
+  app.get('/api/poems/unread/count', ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const count = await storage.getUnreadPoemCount(userId);
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get unread count' });
+    }
+  });
+
+  // Connection/Friend endpoints
+  app.get('/api/connections', ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const connections = await storage.getUserConnections(userId);
+      res.json(connections);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get connections' });
+    }
+  });
+
+  app.get('/api/connections/pending', ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const pendingRequests = await storage.getPendingConnectionRequests(userId);
+      res.json(pendingRequests);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get pending requests' });
+    }
+  });
+
+  app.post('/api/connections/:userId', ensureAuthenticated, async (req, res) => {
+    try {
+      const requesterId = req.user.id;
+      const addresseeId = parseInt(req.params.userId);
+      
+      // Check if connection already exists
+      const existingConnection = await storage.getConnection(requesterId, addresseeId);
+      if (existingConnection) {
+        return res.status(400).json({ message: 'Connection already exists' });
+      }
+      
+      const connection = await storage.createConnection({
+        requesterId,
+        addresseeId,
+        status: 'pending'
+      });
+      
+      res.status(201).json(connection);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to create connection request' });
+    }
+  });
+
+  app.put('/api/connections/:connectionId', ensureAuthenticated, async (req, res) => {
+    try {
+      const connectionId = parseInt(req.params.connectionId);
+      const userId = req.user.id;
+      const { status } = req.body;
+      
+      if (!['accepted', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status' });
+      }
+      
+      const connection = await storage.updateConnectionStatus(connectionId, status);
+      if (!connection) {
+        return res.status(404).json({ message: 'Connection not found' });
+      }
+      
+      res.json(connection);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to update connection' });
+    }
+  });
+
+  // AI Image Generation
+  app.post('/api/generate-image', ensureAuthenticated, async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      if (!prompt) {
+        return res.status(400).json({ message: 'Prompt is required' });
+      }
+      
+      const imageData = await storage.generateAiImage(prompt);
+      res.json({ imageData });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to generate image' });
+    }
+  });
+
+  // PDF Export
+  app.post('/api/export-poems-pdf', ensureAuthenticated, async (req, res) => {
+    try {
+      const { poemIds } = req.body;
+      if (!poemIds || !Array.isArray(poemIds) || poemIds.length === 0) {
+        return res.status(400).json({ message: 'Valid poem IDs array is required' });
+      }
+      
+      const pdfData = await storage.generatePoemPdf(poemIds);
+      res.json({ pdfData });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to generate PDF' });
     }
   });
 
