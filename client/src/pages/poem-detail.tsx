@@ -285,10 +285,9 @@ export default function PoemDetail() {
           
           {/* Poem Content */}
           <div className="px-6 py-8">
-            <div 
-              className="prose max-w-none poem-text text-darktext leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: poem.content }}
-            />
+            <div className="prose max-w-none poem-text text-darktext leading-relaxed whitespace-pre-wrap">
+              {poem.content}
+            </div>
           </div>
         </div>
         

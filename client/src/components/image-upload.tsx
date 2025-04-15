@@ -1,17 +1,42 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getBase64 } from "@/lib/utils";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
   onImagesChange: (images: { imageData: string; caption?: string }[]) => void;
   existingImages?: { imageData: string; caption?: string }[];
+  generatedImage?: string;
 }
 
-export function ImageUpload({ onImagesChange, existingImages = [] }: ImageUploadProps) {
+export function ImageUpload({ onImagesChange, existingImages = [], generatedImage }: ImageUploadProps) {
   const [images, setImages] = useState<Array<{ imageData: string; caption?: string }>>(existingImages);
+  const [imagePrompt, setImagePrompt] = useState<string>("");
+  const [isGeneratingImage, setIsGeneratingImage] = useState<boolean>(false);
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Add any generated image passed from parent component
+  useEffect(() => {
+    if (generatedImage && !images.some(img => img.imageData === generatedImage)) {
+      const newImages = [...images, { imageData: generatedImage, caption: "Generated image" }];
+      setImages(newImages);
+      onImagesChange(newImages);
+    }
+  }, [generatedImage]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

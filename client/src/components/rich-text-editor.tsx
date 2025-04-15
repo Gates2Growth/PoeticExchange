@@ -8,7 +8,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { Image } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface RichTextEditorProps {
   value: string;
@@ -24,6 +38,10 @@ export function RichTextEditor({
   placeholder = "Write your poem here...",
 }: RichTextEditorProps) {
   const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
+  const [imagePrompt, setImagePrompt] = useState<string>("");
+  const [isGeneratingImage, setIsGeneratingImage] = useState<boolean>(false);
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const { toast } = useToast();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleFormat = (format: string) => {
@@ -150,6 +168,45 @@ export function RichTextEditor({
     });
   };
 
+  const generateImage = async () => {
+    if (!imagePrompt.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a prompt for the image",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    try {
+      const response = await apiRequest("POST", "/api/generate-image", { prompt: imagePrompt });
+      const data = await response.json();
+      
+      // Return the image data to the parent component
+      if (data.imageData) {
+        setDialogOpen(false);
+        toast({
+          title: "Success",
+          description: "Image generated successfully! You can add it to your poem from the image upload section."
+        });
+        return data.imageData;
+      } else {
+        throw new Error("Failed to generate image");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate image. Please try again.",
+        variant: "destructive"
+      });
+      console.error("Image generation error:", error);
+      return null;
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -220,6 +277,51 @@ export function RichTextEditor({
         >
           <i className="fas fa-minus"></i>
         </Button>
+        <div className="h-6 border-r border-gray-300"></div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-3 text-xs"
+              title="Generate Image"
+            >
+              <Image className="h-4 w-4 mr-1" /> Generate Image
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Generate Image for Poem</DialogTitle>
+              <DialogDescription>
+                Enter a prompt to generate a free stock image related to your poem. 
+                The image will be available in the image upload section.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="prompt" className="text-right">
+                  Prompt
+                </Label>
+                <Input
+                  id="prompt"
+                  value={imagePrompt}
+                  onChange={(e) => setImagePrompt(e.target.value)}
+                  className="col-span-3"
+                  placeholder="e.g., sunset over mountains, abstract nature scene"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                onClick={generateImage} 
+                disabled={isGeneratingImage}
+              >
+                {isGeneratingImage ? "Generating..." : "Generate"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <div className="h-6 border-r border-gray-300"></div>
         <Select onValueChange={handleFontChange}>
           <SelectTrigger className="h-8 w-[120px]">
