@@ -200,11 +200,52 @@ export default function PoemDetail() {
             <h1 className="text-2xl font-display font-semibold text-darktext">{poem.title}</h1>
             <div className="ml-auto flex items-center space-x-3">
               {poem.userId === user?.id && (
-                <Button variant="ghost" size="sm" onClick={() => navigate(`/poems/edit/${poem.id}`)}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => navigate(`/edit-poem/${poem.id}`)}
+                  title="Edit poem"
+                >
                   <Edit className="h-4 w-4" />
                 </Button>
               )}
-              <Button variant="ghost" size="sm">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await apiRequest(
+                      "POST", 
+                      "/api/export-poems-pdf", 
+                      { poemIds: [poem.id] }
+                    );
+                    const data = await response.json();
+                    
+                    if (data.pdfData) {
+                      // Create a download link for the PDF
+                      const link = document.createElement('a');
+                      link.href = `data:application/pdf;base64,${data.pdfData}`;
+                      link.download = `poem-${poem.id}.pdf`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    } else {
+                      throw new Error("Failed to generate PDF");
+                    }
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to download poem as PDF. Please try again.",
+                      variant: "destructive",
+                    });
+                    console.error("PDF download error:", error);
+                  }
+                }}
+                title="Download as PDF"
+              >
+                <i className="fas fa-download h-4 w-4"></i>
+              </Button>
+              <Button variant="ghost" size="sm" title="Share poem">
                 <Share className="h-4 w-4" />
               </Button>
             </div>

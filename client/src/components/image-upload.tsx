@@ -83,8 +83,99 @@ export function ImageUpload({ onImagesChange, existingImages = [], generatedImag
     onImagesChange(newImages);
   };
 
+  const generateImage = async () => {
+    if (!imagePrompt.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a prompt for the image",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    try {
+      const response = await apiRequest("POST", "/api/generate-image", { prompt: imagePrompt });
+      const data = await response.json();
+      
+      if (data.imageData) {
+        setDialogOpen(false);
+        
+        // Add the generated image
+        const newImages = [...images, { imageData: data.imageData, caption: imagePrompt }];
+        setImages(newImages);
+        onImagesChange(newImages);
+        
+        toast({
+          title: "Success",
+          description: "Image generated successfully!"
+        });
+        
+        // Reset prompt
+        setImagePrompt("");
+      } else {
+        throw new Error("Failed to generate image");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate image. Please try again.",
+        variant: "destructive"
+      });
+      console.error("Image generation error:", error);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-sm font-medium">Add Images</h3>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 px-3 text-xs"
+            >
+              <Plus className="h-4 w-4 mr-1" /> Generate Image
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Generate Image for Poem</DialogTitle>
+              <DialogDescription>
+                Enter a prompt to generate a free stock image related to your poem.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="text-right text-sm">
+                  Prompt
+                </div>
+                <Input
+                  id="image-prompt"
+                  value={imagePrompt}
+                  onChange={(e) => setImagePrompt(e.target.value)}
+                  className="col-span-3"
+                  placeholder="e.g., sunset over mountains, abstract nature scene"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                onClick={generateImage} 
+                disabled={isGeneratingImage}
+              >
+                {isGeneratingImage ? "Generating..." : "Generate"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Upload dropzone */}
         <div 

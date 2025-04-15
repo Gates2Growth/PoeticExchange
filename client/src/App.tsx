@@ -7,6 +7,7 @@ import AuthPage from "@/pages/auth-page";
 import HomePage from "@/pages/home-page";
 import PoemsLibrary from "@/pages/poems-library";
 import CreatePoem from "@/pages/create-poem";
+import EditPoem from "@/pages/edit-poem";
 import PoemDetail from "@/pages/poem-detail";
 import Chat from "@/pages/chat";
 import { ProtectedRoute } from "./lib/protected-route";
@@ -20,6 +21,7 @@ function Router() {
       <ProtectedRoute path="/poems" component={PoemsLibrary} />
       <ProtectedRoute path="/poems/create" component={CreatePoem} />
       <ProtectedRoute path="/poems/:id" component={PoemDetail} />
+      <ProtectedRoute path="/edit-poem/:id" component={EditPoem} />
       <ProtectedRoute path="/chat" component={Chat} />
       <Route component={NotFound} />
     </Switch>
