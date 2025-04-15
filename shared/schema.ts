@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -7,6 +7,24 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   displayName: text("display_name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  notificationPreferences: jsonb("notification_preferences").default({
+    emailEnabled: false,
+    smsEnabled: false,
+    newPoemNotification: true,
+    commentNotification: true
+  }),
+});
+
+// Connection/friendship table to implement mutual "add" requirement
+export const connections = pgTable("connections", {
+  id: serial("id").primaryKey(),
+  requesterId: integer("requester_id").notNull(),
+  addresseeId: integer("addressee_id").notNull(),
+  status: text("status").notNull().default("pending"), // pending, accepted, rejected
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const poems = pgTable("poems", {
@@ -17,6 +35,7 @@ export const poems = pgTable("poems", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   tags: text("tags").array(),
   visibility: text("visibility").notNull().default("shared"),
+  aiGeneratedImage: boolean("ai_generated_image").default(false),
 });
 
 export const images = pgTable("images", {
@@ -25,6 +44,15 @@ export const images = pgTable("images", {
   imageData: text("image_data").notNull(),
   caption: text("caption"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  aiGenerated: boolean("ai_generated").default(false),
+});
+
+// Track read status of poems
+export const poemReads = pgTable("poem_reads", {
+  id: serial("id").primaryKey(),
+  poemId: integer("poem_id").notNull(),
+  userId: integer("user_id").notNull(),
+  readAt: timestamp("read_at").defaultNow().notNull(),
 });
 
 export const comments = pgTable("comments", {
@@ -81,12 +109,27 @@ export const insertMessageSchema = createInsertSchema(messages).pick({
   imageData: true,
 });
 
+// Add schema for poemReads
+export const insertPoemReadSchema = createInsertSchema(poemReads).pick({
+  poemId: true,
+  userId: true,
+});
+
+// Add schema for connections
+export const insertConnectionSchema = createInsertSchema(connections).pick({
+  requesterId: true,
+  addresseeId: true,
+  status: true,
+});
+
 // Select types
 export type User = typeof users.$inferSelect;
 export type Poem = typeof poems.$inferSelect;
 export type Image = typeof images.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type Message = typeof messages.$inferSelect;
+export type PoemRead = typeof poemReads.$inferSelect;
+export type Connection = typeof connections.$inferSelect;
 
 // Insert types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -94,6 +137,8 @@ export type InsertPoem = z.infer<typeof insertPoemSchema>;
 export type InsertImage = z.infer<typeof insertImageSchema>;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type InsertPoemRead = z.infer<typeof insertPoemReadSchema>;
+export type InsertConnection = z.infer<typeof insertConnectionSchema>;
 
 // Extended schemas for frontend validation
 export const poemFormSchema = insertPoemSchema.extend({
