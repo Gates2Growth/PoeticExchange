@@ -269,7 +269,10 @@ export default function PoemsLibrary() {
                           <span className="ml-auto text-xs text-gray-500">{formatDate(poem.createdAt)}</span>
                         </div>
                       )}
-                      <h3 className="font-display text-lg font-medium text-darktext">{poem.title}</h3>
+                      <div className="relative">
+                        <h3 className="font-display text-lg font-medium text-darktext">{poem.title}</h3>
+                        {isNew && <span className="new-badge">New</span>}
+                      </div>
                       <div className="mt-2 prose poem-text text-gray-600 text-sm line-clamp-3">
                         {truncateText(poem.content.replace(/<[^>]*>/g, ''), 120)}
                       </div>
@@ -294,7 +297,10 @@ export default function PoemsLibrary() {
                 <Card key={poem.id} className="overflow-hidden hover:shadow-md transition-all">
                   <div className="p-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-display text-lg font-medium text-darktext">{poem.title}</h3>
+                      <div className="relative">
+                        <h3 className="font-display text-lg font-medium text-darktext">{poem.title}</h3>
+                        {isNew && <span className="new-badge">New</span>}
+                      </div>
                       <div className="flex items-center">
                         <span className="text-xs text-gray-500 mr-4">{formatDate(poem.createdAt)}</span>
                         <DropdownMenu>

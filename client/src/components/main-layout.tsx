@@ -15,7 +15,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   
@@ -176,7 +176,8 @@ export function MainLayout({ children }: MainLayoutProps) {
               <button 
                 className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
                 onClick={() => {
-                  const { logoutMutation } = useAuth();
+                  // Can't use hooks inside event handlers
+                  // Getting logout mutation from the same auth context that was used in the component
                   logoutMutation.mutate();
                   setMobileMenuOpen(false);
                 }}
