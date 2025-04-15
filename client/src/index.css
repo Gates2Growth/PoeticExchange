@@ -11,3 +11,24 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Poem text styling - preserves line breaks and formatting */
+.poem-text {
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+
+/* Add space between stanzas */
+.poem-text p {
+  margin-bottom: 1.5em;
+}
+
+/* Style for poem display in detail view */
+.prose .poem-text {
+  font-family: 'Georgia', serif;
+}
+
+/* Styling for "New" badge on unread poems */
+.new-badge {
+  @apply absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full;
+}
