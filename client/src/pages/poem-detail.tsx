@@ -40,9 +40,9 @@ import {
   ChevronRight 
 } from "lucide-react";
 
-interface FormData {
+type FormData = {
   content: string;
-}
+};
 
 export default function PoemDetail() {
   const { id } = useParams<{ id: string }>();
@@ -110,19 +110,11 @@ export default function PoemDetail() {
   const commentMutation = useMutation({
     mutationFn: async (data: InsertComment) => {
       const response = await apiRequest("POST", `/api/poems/${poemId}/comments`, data);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to post comment');
-      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/poems/${poemId}/comments`] });
       form.reset();
-      toast({
-        title: "Success",
-        description: "Comment posted successfully",
-      });
     },
     onError: (error: Error) => {
       toast({
@@ -517,3 +509,4 @@ export default function PoemDetail() {
     </div>
   );
 }
+
